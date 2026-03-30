@@ -134,6 +134,13 @@ def parse_args(argv: list[str]) -> Namespace:
         default=None,
         help="path to config file (e.g. wheel.json)",
     )
+    config_group.add_argument(
+        "--version-str",
+        "-v",
+        default=None,
+        dest="pkg_version",
+        help="package version (overrides version in config file)",
+    )
 
     single_group = p.add_argument_group("single binary mode")
     single_group.add_argument(
@@ -141,13 +148,6 @@ def parse_args(argv: list[str]) -> Namespace:
         "-n",
         default=None,
         help="package name",
-    )
-    single_group.add_argument(
-        "--version-str",
-        "-v",
-        default=None,
-        dest="pkg_version",
-        help="package version",
     )
     single_group.add_argument(
         "--binary",
@@ -233,9 +233,9 @@ def _main_inner(argv: list[str]) -> int:
     args = parse_args(argv)
 
     # Determine mode: single binary or config file
-    single_binary_args = [args.name, args.pkg_version, args.binary, args.platform]
+    single_binary_args = [args.name, args.binary, args.platform]
     has_single_args = any(a is not None for a in single_binary_args)
-    all_single_args = all(a is not None for a in single_binary_args)
+    all_single_args = all(a is not None for a in single_binary_args) and args.pkg_version is not None
 
     if has_single_args and not all_single_args:
         print(
@@ -308,6 +308,13 @@ def _build_from_config(args: Namespace) -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+    version = args.pkg_version if args.pkg_version else config.version
+    if not version:
+        print(
+            "Error: version is required. Provide it in the config file or with --version-str.",
+            file=sys.stderr,
+        )
+        return 1
     output_dir = Path(args.output_dir) if args.output_dir else Path(config.output_dir)
     built_count = 0
 
@@ -315,7 +322,7 @@ def _build_from_config(args: Namespace) -> int:
         wheel_path = build_wheel(
             binary_path=binary_mapping.binary_path,
             name=config.name,
-            version=config.version,
+            version=version,
             platform=binary_mapping.platform,
             output_dir=output_dir,
             description=config.description,

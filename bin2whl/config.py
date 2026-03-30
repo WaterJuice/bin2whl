@@ -93,7 +93,7 @@ def load_config(config_path: Path) -> WheelConfig:
 
     # Parse package fields (top-level in JSON)
     name = _require_str(raw, "name", errors)
-    version = _require_str(raw, "version", errors)
+    version = _optional_str(raw, "version", "")
     description = _optional_str(raw, "description", "")
     author = _optional_str(raw, "author", "")
     author_email = _optional_str(raw, "author-email", "")
