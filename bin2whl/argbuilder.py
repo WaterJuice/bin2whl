@@ -17,7 +17,6 @@
 # ----------------------------------------------------------------------------------------
 
 import argparse
-import sys
 from typing import Any
 
 # ----------------------------------------------------------------------------------------
@@ -77,6 +76,20 @@ class ArgsParser:
         return self._parser.add_argument(*args, **kwargs)
 
     # ------------------------------------------------------------------------------------
+    def add_argument_group(self, title: str) -> "ArgGroup":
+        """
+        Add a named argument group for organising help output.
+
+        Parameters:
+            title: Group heading shown in help.
+
+        Returns:
+            An ArgGroup wrapper.
+        """
+        group = self._parser.add_argument_group(title)
+        return ArgGroup(group)
+
+    # ------------------------------------------------------------------------------------
     def add_mutex_group(self) -> "MutexGroup":
         """
         Add a mutually exclusive argument group.
@@ -109,7 +122,28 @@ class ArgsParser:
             message: The error message to display.
         """
         self._parser.error(message)
-        sys.exit(2)
+
+
+class ArgGroup:
+    """Wrapper for a named argument group."""
+
+    # ------------------------------------------------------------------------------------
+    def __init__(self, group: argparse._ArgumentGroup) -> None:  # pyright: ignore[reportPrivateUsage]
+        self._group = group
+
+    # ------------------------------------------------------------------------------------
+    def add_argument(self, *args: Any, **kwargs: Any) -> argparse.Action:
+        """
+        Add an argument to the group. Passes through to argparse.
+
+        Parameters:
+            args:   Positional arguments for argparse.
+            kwargs: Keyword arguments for argparse.
+
+        Returns:
+            The created Action.
+        """
+        return self._group.add_argument(*args, **kwargs)
 
 
 class MutexGroup:

@@ -17,8 +17,8 @@
 # ----------------------------------------------------------------------------------------
 
 import json
+import re
 from dataclasses import dataclass
-from dataclasses import field
 from pathlib import Path
 from typing import cast
 
@@ -28,6 +28,9 @@ from typing import cast
 
 DEFAULT_OUTPUT_DIR = "wheels"
 DEFAULT_PYTHON_REQUIRES = ">=3.7"
+
+_PACKAGE_NAME_RE = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$")
+_PEP440_VERSION_RE = re.compile(r"^\d+(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?$")
 
 # ----------------------------------------------------------------------------------------
 #   Data Classes
@@ -58,22 +61,6 @@ class WheelConfig:
     python_requires: str
 
 
-@dataclass
-class ConfigErrors:
-    """Collection of validation errors from config parsing."""
-
-    errors: list[str] = field(default_factory=list[str])
-
-    def add(self, message: str) -> None:
-        """Add an error message."""
-        self.errors.append(message)
-
-    @property
-    def has_errors(self) -> bool:
-        """Whether any errors were recorded."""
-        return len(self.errors) > 0
-
-
 # ----------------------------------------------------------------------------------------
 #   Functions
 # ----------------------------------------------------------------------------------------
@@ -94,9 +81,6 @@ def load_config(config_path: Path) -> WheelConfig:
         FileNotFoundError: If config file does not exist.
         ValueError: If config file is invalid or missing required fields.
     """
-    if not config_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-
     with config_path.open("r", encoding="utf-8") as f:
         raw_value = json.load(f)
 
@@ -104,7 +88,7 @@ def load_config(config_path: Path) -> WheelConfig:
         raise ValueError("Configuration file must contain a JSON object")
     raw = cast("dict[str, object]", raw_value)
 
-    errors = ConfigErrors()
+    errors: list[str] = []
     base_dir = config_path.parent
 
     # Parse package fields (top-level in JSON)
@@ -116,15 +100,13 @@ def load_config(config_path: Path) -> WheelConfig:
     license_name = _optional_str(raw, "license", "")
     homepage = _optional_str(raw, "homepage", "")
 
-    # Validate package name
-    if name and not _is_valid_package_name(name):
-        errors.add(
+    if name and not _PACKAGE_NAME_RE.match(name):
+        errors.append(
             f"Invalid package name: '{name}' (use alphanumeric, hyphens, or underscores)"
         )
 
-    # Validate version (basic PEP 440 check)
-    if version and not _is_valid_version(version):
-        errors.add(f"Invalid version: '{version}' (must follow PEP 440)")
+    if version and not _PEP440_VERSION_RE.match(version):
+        errors.append(f"Invalid version: '{version}' (must follow PEP 440)")
 
     # Parse binaries object
     binaries_raw = raw.get("binaries", {})
@@ -135,26 +117,26 @@ def load_config(config_path: Path) -> WheelConfig:
     binaries: list[BinaryMapping] = []
     for platform_tag, binary_path_value in binaries_table.items():
         if not isinstance(binary_path_value, str):
-            errors.add(f"Binary path for '{platform_tag}' must be a string")
+            errors.append(f"Binary path for '{platform_tag}' must be a string")
             continue
 
         binary_path = base_dir / binary_path_value
         if not binary_path.exists():
-            errors.add(f"Binary not found: {binary_path} (platform: {platform_tag})")
+            errors.append(f"Binary not found: {binary_path} (platform: {platform_tag})")
             continue
 
         binaries.append(BinaryMapping(platform=platform_tag, binary_path=binary_path))
 
-    if not binaries and not errors.has_errors:
-        errors.add('No binaries specified in "binaries"')
+    if not binaries and not errors:
+        errors.append('No binaries specified in "binaries"')
 
     # Parse options
     output_dir = _optional_str(raw, "output-dir", DEFAULT_OUTPUT_DIR)
     python_requires = _optional_str(raw, "python-requires", DEFAULT_PYTHON_REQUIRES)
 
-    if errors.has_errors:
+    if errors:
         raise ValueError(
-            "Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors.errors)
+            "Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors)
         )
 
     return WheelConfig(
@@ -172,7 +154,7 @@ def load_config(config_path: Path) -> WheelConfig:
 
 
 # ----------------------------------------------------------------------------------------
-def _require_str(table: dict[str, object], key: str, errors: ConfigErrors) -> str:
+def _require_str(table: dict[str, object], key: str, errors: list[str]) -> str:
     """
     Extract a required string field from a JSON object.
 
@@ -186,10 +168,10 @@ def _require_str(table: dict[str, object], key: str, errors: ConfigErrors) -> st
     """
     value = table.get(key)
     if value is None:
-        errors.add(f'Missing required field: "{key}"')
+        errors.append(f'Missing required field: "{key}"')
         return ""
     if not isinstance(value, str):
-        errors.add(f'"{key}" must be a string')
+        errors.append(f'"{key}" must be a string')
         return ""
     return value
 
@@ -213,37 +195,3 @@ def _optional_str(table: dict[str, object], key: str, default: str) -> str:
     if not isinstance(value, str):
         return default
     return value
-
-
-# ----------------------------------------------------------------------------------------
-def _is_valid_package_name(name: str) -> bool:
-    """
-    Check whether a package name is valid (alphanumeric, hyphens, underscores).
-
-    Parameters:
-        name: The package name to validate.
-
-    Returns:
-        True if valid.
-    """
-    import re
-
-    return bool(re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$", name))
-
-
-# ----------------------------------------------------------------------------------------
-def _is_valid_version(version: str) -> bool:
-    """
-    Check whether a version string is valid per PEP 440 (basic check).
-
-    Parameters:
-        version: The version string to validate.
-
-    Returns:
-        True if valid.
-    """
-    import re
-
-    # Basic PEP 440 pattern: N.N.N with optional pre/post/dev suffixes
-    pattern = r"^\d+(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?$"
-    return bool(re.match(pattern, version))

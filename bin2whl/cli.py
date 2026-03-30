@@ -19,6 +19,7 @@
 import sys
 import traceback
 from pathlib import Path
+from bin2whl.config import DEFAULT_OUTPUT_DIR
 from bin2whl.config import load_config
 from bin2whl.version import VERSION_STR
 from bin2whl.wheel_builder import build_wheel
@@ -55,6 +56,40 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <https://unlicense.org>"""
 
+EXAMPLE_CONFIG = """\
+{
+    "name": "your-tool",
+    "version": "0.1.0",
+    "description": "A CLI tool packaged for PyPI",
+    "author": "Your Name",
+    "author-email": "you@example.com",
+    "license": "MIT",
+    "homepage": "https://github.com/yourname/your-tool",
+    "binaries": {
+        "linux_x86_64": "dist/your-tool-linux-x86_64",
+        "linux_aarch64": "dist/your-tool-linux-aarch64",
+        "macosx_10_9_x86_64": "dist/your-tool-macos-x86_64",
+        "macosx_11_0_arm64": "dist/your-tool-macos-arm64",
+        "win_amd64": "dist/your-tool-win-x86_64.exe",
+        "win_arm64": "dist/your-tool-win-arm64.exe"
+    },
+    "output-dir": "wheels",
+    "python-requires": ">=3.7"
+}"""
+
+PLATFORMS_TEXT = """\
+Supported platform tags:
+
+  Linux x86_64      linux_x86_64
+  Linux ARM64       linux_aarch64
+  macOS x86_64      macosx_10_9_x86_64
+  macOS ARM64       macosx_11_0_arm64
+  Windows x86_64    win_amd64
+  Windows ARM64     win_arm64
+
+Any valid wheel platform tag is accepted — the above are the most common.
+Use the exact tag string as the --platform value or as keys in wheel.json."""
+
 # ----------------------------------------------------------------------------------------
 #   Functions
 # ----------------------------------------------------------------------------------------
@@ -79,59 +114,78 @@ def parse_args(argv: list[str]) -> Namespace:
         version=LICENSE_TEXT,
         help="show license and exit",
     )
-
-    # Config file path
     p.add_argument(
+        "--example-config",
+        action="version",
+        version=EXAMPLE_CONFIG,
+        help="print an example wheel.json and exit",
+    )
+    p.add_argument(
+        "--platforms",
+        action="version",
+        version=PLATFORMS_TEXT,
+        help="list supported platform tags and exit",
+    )
+
+    config_group = p.add_argument_group("config file mode")
+    config_group.add_argument(
         "--config",
         "-c",
         default=None,
         help="path to config file (e.g. wheel.json)",
     )
 
-    # Output directory override
-    p.add_argument(
-        "--output-dir",
-        "-o",
-        default=None,
-        help="output directory for wheel files (overrides config)",
-    )
-
-    # Single binary mode arguments
-    p.add_argument(
+    single_group = p.add_argument_group("single binary mode")
+    single_group.add_argument(
         "--name",
+        "-n",
         default=None,
-        help="package name (single binary mode)",
+        help="package name",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--version-str",
+        "-v",
         default=None,
         dest="pkg_version",
-        help="package version (single binary mode)",
+        help="package version",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--binary",
+        "-b",
         default=None,
-        help="path to binary file (single binary mode)",
+        help="path to binary file",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--platform",
+        "-p",
         default=None,
-        help="platform tag, e.g. linux_x86_64 (single binary mode)",
+        help="platform tag (see --platforms)",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--description",
+        "-d",
         default="",
         help="package description",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--author",
+        "-a",
         default="",
         help="author name",
     )
-    p.add_argument(
+    single_group.add_argument(
         "--author-email",
+        "-e",
         default="",
         help="author email",
+    )
+
+    output_group = p.add_argument_group("output")
+    output_group.add_argument(
+        "--output-dir",
+        "-o",
+        default=None,
+        help="output directory for wheel files (default: wheels)",
     )
 
     return p.parse(argv)
@@ -214,30 +268,22 @@ def _build_single(args: Namespace) -> int:
     Returns:
         Exit code.
     """
-    name: str = args.name
-    version: str = args.pkg_version
-    binary_path = Path(args.binary)
-    platform: str = args.platform
-    output_dir = Path(args.output_dir) if args.output_dir else Path("wheels")
+    output_dir = Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR)
 
-    if not binary_path.exists():
-        print(f"Error: Binary not found: {binary_path}", file=sys.stderr)
+    try:
+        wheel_path = build_wheel(
+            binary_path=Path(args.binary),
+            name=args.name,
+            version=args.pkg_version,
+            platform=args.platform,
+            output_dir=output_dir,
+            description=args.description,
+            author=args.author,
+            author_email=args.author_email,
+        )
+    except (FileNotFoundError, IsADirectoryError, ValueError) as e:
+        print(f"Error: {e}", file=sys.stderr)
         return 1
-
-    if not binary_path.is_file():
-        print(f"Error: Not a file: {binary_path}", file=sys.stderr)
-        return 1
-
-    wheel_path = build_wheel(
-        binary_path=binary_path,
-        name=name,
-        version=version,
-        platform=platform,
-        output_dir=output_dir,
-        description=args.description,
-        author=args.author,
-        author_email=args.author_email,
-    )
 
     print(f"Built: {wheel_path}")
     return 0
@@ -258,10 +304,7 @@ def _build_from_config(args: Namespace) -> int:
 
     try:
         config = load_config(config_path)
-    except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
-    except ValueError as e:
+    except (FileNotFoundError, IsADirectoryError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 

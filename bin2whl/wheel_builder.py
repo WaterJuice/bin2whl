@@ -32,7 +32,6 @@ from bin2whl.metadata import generate_wheel_metadata
 #   Constants
 # ----------------------------------------------------------------------------------------
 
-# Permissions for files inside the wheel ZIP
 _EXECUTABLE_PERMS = 0o755
 _REGULAR_PERMS = 0o644
 
@@ -95,46 +94,34 @@ def build_wheel(
 
     Raises:
         FileNotFoundError: If the binary does not exist.
-        ValueError: If the binary path is not a file.
+        IsADirectoryError: If the binary path is a directory.
     """
-    if not binary_path.exists():
-        raise FileNotFoundError(f"Binary not found: {binary_path}")
-    if not binary_path.is_file():
-        raise ValueError(f"Not a file: {binary_path}")
-
     pkg_name = normalise_name(name)
     dist_info = f"{pkg_name}-{version}.dist-info"
     data_dir = f"{pkg_name}-{version}.data"
 
-    # Determine the binary filename inside the wheel
     binary_filename = name
     if platform.startswith("win"):
         binary_filename = name + ".exe"
 
-    # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Wheel filename per PEP 427
     wheel_filename = f"{pkg_name}-{version}-py3-none-{platform}.whl"
     wheel_path = output_dir / wheel_filename
 
-    # Collect all files and their records
     records: list[FileRecord] = []
 
     with zipfile.ZipFile(wheel_path, "w", compression=zipfile.ZIP_DEFLATED) as whl:
-        # Add the binary into .data/scripts/ — pip copies this to bin/
+        # Binary into .data/scripts/ — pip copies this directly to bin/
         binary_data = binary_path.read_bytes()
-        binary_arcname = f"{data_dir}/scripts/{binary_filename}"
-        _write_to_zip(whl, binary_arcname, binary_data, executable=True)
-        records.append(
-            FileRecord(
-                path=binary_arcname,
-                sha256_digest=compute_file_hash(binary_data),
-                size=len(binary_data),
-            )
+        _add_file(
+            whl,
+            f"{data_dir}/scripts/{binary_filename}",
+            binary_data,
+            records,
+            executable=True,
         )
 
-        # Add METADATA
         metadata_content = generate_metadata(
             name=name,
             version=version,
@@ -145,37 +132,49 @@ def build_wheel(
             homepage=homepage,
             python_requires=python_requires,
         )
-        metadata_data = metadata_content.encode("utf-8")
-        metadata_arcname = f"{dist_info}/METADATA"
-        _write_to_zip(whl, metadata_arcname, metadata_data)
-        records.append(
-            FileRecord(
-                path=metadata_arcname,
-                sha256_digest=compute_file_hash(metadata_data),
-                size=len(metadata_data),
-            )
+        _add_file(
+            whl, f"{dist_info}/METADATA", metadata_content.encode("utf-8"), records
+        )
+        _add_file(
+            whl,
+            f"{dist_info}/WHEEL",
+            generate_wheel_metadata(platform).encode("utf-8"),
+            records,
         )
 
-        # Add WHEEL
-        wheel_meta_content = generate_wheel_metadata(platform)
-        wheel_meta_data = wheel_meta_content.encode("utf-8")
-        wheel_meta_arcname = f"{dist_info}/WHEEL"
-        _write_to_zip(whl, wheel_meta_arcname, wheel_meta_data)
-        records.append(
-            FileRecord(
-                path=wheel_meta_arcname,
-                sha256_digest=compute_file_hash(wheel_meta_data),
-                size=len(wheel_meta_data),
-            )
-        )
-
-        # Add RECORD (must be last)
+        # RECORD must be last — lists all other files, then itself without a hash
         record_content = generate_record(records, dist_info)
-        record_data = record_content.encode("utf-8")
-        record_arcname = f"{dist_info}/RECORD"
-        _write_to_zip(whl, record_arcname, record_data)
+        _write_to_zip(whl, f"{dist_info}/RECORD", record_content.encode("utf-8"))
 
     return wheel_path
+
+
+# ----------------------------------------------------------------------------------------
+def _add_file(
+    whl: zipfile.ZipFile,
+    arcname: str,
+    data: bytes,
+    records: list[FileRecord],
+    executable: bool = False,
+) -> None:
+    """
+    Write a file to the wheel and append its hash record.
+
+    Parameters:
+        whl:        The open ZipFile.
+        arcname:    Archive member name.
+        data:       File content as bytes.
+        records:    Record list to append to.
+        executable: Whether to set executable permissions.
+    """
+    _write_to_zip(whl, arcname, data, executable=executable)
+    records.append(
+        FileRecord(
+            path=arcname,
+            sha256_digest=compute_file_hash(data),
+            size=len(data),
+        )
+    )
 
 
 # ----------------------------------------------------------------------------------------
@@ -196,9 +195,6 @@ def _write_to_zip(
     """
     info = zipfile.ZipInfo(arcname)
     info.compress_type = zipfile.ZIP_DEFLATED
-
-    # Set external attributes for Unix permissions
     perms = _EXECUTABLE_PERMS if executable else _REGULAR_PERMS
     info.external_attr = (stat.S_IFREG | perms) << 16
-
     zf.writestr(info, data)
