@@ -59,6 +59,7 @@ class WheelConfig:
     binaries: list[BinaryMapping]
     output_dir: str
     python_requires: str
+    classifiers: list[str]
 
 
 # ----------------------------------------------------------------------------------------
@@ -134,6 +135,15 @@ def load_config(config_path: Path) -> WheelConfig:
     output_dir = _optional_str(raw, "output-dir", DEFAULT_OUTPUT_DIR)
     python_requires = _optional_str(raw, "python-requires", DEFAULT_PYTHON_REQUIRES)
 
+    classifiers_raw = raw.get("classifiers", [])
+    classifiers: list[str] = []
+    if isinstance(classifiers_raw, list):
+        for i, c in enumerate(classifiers_raw):
+            if isinstance(c, str):
+                classifiers.append(c)
+            else:
+                errors.append(f"classifiers[{i}] must be a string")
+
     if errors:
         raise ValueError(
             "Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors)
@@ -150,6 +160,7 @@ def load_config(config_path: Path) -> WheelConfig:
         binaries=binaries,
         output_dir=output_dir,
         python_requires=python_requires,
+        classifiers=classifiers,
     )
 
 

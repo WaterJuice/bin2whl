@@ -331,6 +331,7 @@ def _build_from_config(args: Namespace) -> int:
             license_name=config.license_name,
             homepage=config.homepage,
             python_requires=config.python_requires,
+            classifiers=config.classifiers,
         )
         print(f"Built: {wheel_path}")
         built_count += 1

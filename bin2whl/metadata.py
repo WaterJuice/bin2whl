@@ -49,6 +49,7 @@ def generate_metadata(
     license_name: str,
     homepage: str,
     python_requires: str,
+    classifiers: list[str] | None = None,
 ) -> str:
     """
     Generate the METADATA file content for a wheel.
@@ -83,6 +84,9 @@ def generate_metadata(
         lines.append(f"License: {license_name}")
     if python_requires:
         lines.append(f"Requires-Python: {python_requires}")
+    if classifiers:
+        for classifier in classifiers:
+            lines.append(f"Classifier: {classifier}")
 
     lines.append("")
     return "\n".join(lines)
