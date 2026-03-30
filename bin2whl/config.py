@@ -60,6 +60,7 @@ class WheelConfig:
     output_dir: str
     python_requires: str
     classifiers: list[str]
+    readme_content: str
 
 
 # ----------------------------------------------------------------------------------------
@@ -131,6 +132,16 @@ def load_config(config_path: Path) -> WheelConfig:
     if not binaries and not errors:
         errors.append('No binaries specified in "binaries"')
 
+    # Parse readme file
+    readme_path_str = _optional_str(raw, "readme", "")
+    readme_content = ""
+    if readme_path_str:
+        readme_path = base_dir / readme_path_str
+        if not readme_path.exists():
+            errors.append(f"Readme file not found: {readme_path}")
+        else:
+            readme_content = readme_path.read_text(encoding="utf-8")
+
     # Parse options
     output_dir = _optional_str(raw, "output-dir", DEFAULT_OUTPUT_DIR)
     python_requires = _optional_str(raw, "python-requires", DEFAULT_PYTHON_REQUIRES)
@@ -164,6 +175,7 @@ def load_config(config_path: Path) -> WheelConfig:
         output_dir=output_dir,
         python_requires=python_requires,
         classifiers=classifiers,
+        readme_content=readme_content,
     )
 
 

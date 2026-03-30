@@ -50,6 +50,7 @@ def generate_metadata(
     homepage: str,
     python_requires: str,
     classifiers: list[str] | None = None,
+    readme_content: str = "",
 ) -> str:
     """
     Generate the METADATA file content for a wheel.
@@ -87,8 +88,13 @@ def generate_metadata(
     if classifiers:
         for classifier in classifiers:
             lines.append(f"Classifier: {classifier}")
+    if readme_content:
+        lines.append("Description-Content-Type: text/markdown")
 
     lines.append("")
+
+    if readme_content:
+        return "\n".join(lines) + readme_content + "\n"
     return "\n".join(lines)
 
 

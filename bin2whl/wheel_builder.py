@@ -99,6 +99,7 @@ def build_wheel(
     homepage: str = "",
     python_requires: str = ">=3.7",
     classifiers: list[str] | None = None,
+    readme_content: str = "",
 ) -> Path:
     """
     Build a single wheel file from a pre-compiled binary.
@@ -164,6 +165,7 @@ def build_wheel(
             homepage=homepage,
             python_requires=python_requires,
             classifiers=classifiers,
+            readme_content=readme_content,
         )
         _add_file(
             whl, f"{dist_info}/METADATA", metadata_content.encode("utf-8"), records

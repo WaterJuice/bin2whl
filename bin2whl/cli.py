@@ -344,6 +344,7 @@ def _build_from_config(args: Namespace) -> int:
             homepage=config.homepage,
             python_requires=config.python_requires,
             classifiers=config.classifiers,
+            readme_content=config.readme_content,
         )
         print(f"Built: {wheel_path}")
         built_count += 1
