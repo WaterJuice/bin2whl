@@ -96,7 +96,6 @@ Map of platform tags to binary file paths (relative to wheel.json location).
 | Field            | Default    | Description                        |
 |------------------|------------|------------------------------------|
 | `output-dir`     | `wheels`   | Output directory for .whl files    |
-| `console-script` | `true`     | Create console_scripts entry point |
 | `python-requires`| `>=3.7`    | Minimum Python version             |
 
 ## Workflow Example

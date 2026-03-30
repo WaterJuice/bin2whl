@@ -280,7 +280,6 @@ def _build_from_config(args: Namespace) -> int:
             author_email=config.author_email,
             license_name=config.license_name,
             homepage=config.homepage,
-            console_script=config.console_script,
             python_requires=config.python_requires,
         )
         print(f"Built: {wheel_path}")

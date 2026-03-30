@@ -26,21 +26,8 @@ from typing import cast
 #   Constants
 # ----------------------------------------------------------------------------------------
 
-DEFAULT_CONFIG_FILENAME = "wheel.json"
 DEFAULT_OUTPUT_DIR = "wheels"
 DEFAULT_PYTHON_REQUIRES = ">=3.7"
-
-# Valid platform tags for the six supported targets
-VALID_PLATFORMS = {
-    "linux_x86_64",
-    "linux_aarch64",
-    "manylinux2014_x86_64",
-    "manylinux2014_aarch64",
-    "macosx_10_9_x86_64",
-    "macosx_11_0_arm64",
-    "win_amd64",
-    "win_arm64",
-}
 
 # ----------------------------------------------------------------------------------------
 #   Data Classes
@@ -68,7 +55,6 @@ class WheelConfig:
     homepage: str
     binaries: list[BinaryMapping]
     output_dir: str
-    console_script: bool
     python_requires: str
 
 
@@ -164,10 +150,6 @@ def load_config(config_path: Path) -> WheelConfig:
 
     # Parse options
     output_dir = _optional_str(raw, "output-dir", DEFAULT_OUTPUT_DIR)
-    console_script_value = raw.get("console-script", True)
-    if not isinstance(console_script_value, bool):
-        errors.add('"console-script" must be a boolean')
-        console_script_value = True
     python_requires = _optional_str(raw, "python-requires", DEFAULT_PYTHON_REQUIRES)
 
     if errors.has_errors:
@@ -185,7 +167,6 @@ def load_config(config_path: Path) -> WheelConfig:
         homepage=homepage,
         binaries=binaries,
         output_dir=output_dir,
-        console_script=console_script_value,
         python_requires=python_requires,
     )
 

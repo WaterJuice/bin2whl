@@ -3,7 +3,9 @@
 #   ----------------
 #
 #   Core wheel building logic. Creates PEP 427 compliant .whl files (ZIP archives)
-#   containing a pre-compiled binary and proper metadata.
+#   containing a pre-compiled binary placed directly into the scripts directory
+#   via the .data/scripts/ mechanism. No Python wrapper — the binary lands straight
+#   in the venv's bin/ directory.
 #
 #   (c) 2026 WaterJuice — Unlicense; see LICENSE in the project root.
 #
@@ -22,10 +24,8 @@ import zipfile
 from pathlib import Path
 from bin2whl.metadata import FileRecord
 from bin2whl.metadata import compute_file_hash
-from bin2whl.metadata import generate_entry_points
 from bin2whl.metadata import generate_metadata
 from bin2whl.metadata import generate_record
-from bin2whl.metadata import generate_top_level
 from bin2whl.metadata import generate_wheel_metadata
 
 # ----------------------------------------------------------------------------------------
@@ -68,11 +68,14 @@ def build_wheel(
     author_email: str = "",
     license_name: str = "",
     homepage: str = "",
-    console_script: bool = True,
     python_requires: str = ">=3.7",
 ) -> Path:
     """
     Build a single wheel file from a pre-compiled binary.
+
+    The binary is placed into the .data/scripts/ directory so that pip installs
+    it directly into the venv's bin/ (or Scripts/ on Windows) with no Python
+    wrapper script.
 
     Parameters:
         binary_path:     Path to the pre-compiled binary.
@@ -85,7 +88,6 @@ def build_wheel(
         author_email:    Author email address.
         license_name:    Licence identifier.
         homepage:        Project homepage URL.
-        console_script:  Whether to create a console_scripts entry point.
         python_requires: Minimum Python version specifier.
 
     Returns:
@@ -102,6 +104,7 @@ def build_wheel(
 
     pkg_name = normalise_name(name)
     dist_info = f"{pkg_name}-{version}.dist-info"
+    data_dir = f"{pkg_name}-{version}.data"
 
     # Determine the binary filename inside the wheel
     binary_filename = name
@@ -119,28 +122,15 @@ def build_wheel(
     records: list[FileRecord] = []
 
     with zipfile.ZipFile(wheel_path, "w", compression=zipfile.ZIP_DEFLATED) as whl:
-        # Add the binary
+        # Add the binary into .data/scripts/ — pip copies this to bin/
         binary_data = binary_path.read_bytes()
-        binary_arcname = f"{pkg_name}/bin/{binary_filename}"
+        binary_arcname = f"{data_dir}/scripts/{binary_filename}"
         _write_to_zip(whl, binary_arcname, binary_data, executable=True)
         records.append(
             FileRecord(
                 path=binary_arcname,
                 sha256_digest=compute_file_hash(binary_data),
                 size=len(binary_data),
-            )
-        )
-
-        # Add __init__.py with a main() function that launches the binary
-        init_content = _generate_init_py(pkg_name, binary_filename)
-        init_data = init_content.encode("utf-8")
-        init_arcname = f"{pkg_name}/__init__.py"
-        _write_to_zip(whl, init_arcname, init_data)
-        records.append(
-            FileRecord(
-                path=init_arcname,
-                sha256_digest=compute_file_hash(init_data),
-                size=len(init_data),
             )
         )
 
@@ -179,33 +169,6 @@ def build_wheel(
             )
         )
 
-        # Add top_level.txt
-        top_level_content = generate_top_level(pkg_name)
-        top_level_data = top_level_content.encode("utf-8")
-        top_level_arcname = f"{dist_info}/top_level.txt"
-        _write_to_zip(whl, top_level_arcname, top_level_data)
-        records.append(
-            FileRecord(
-                path=top_level_arcname,
-                sha256_digest=compute_file_hash(top_level_data),
-                size=len(top_level_data),
-            )
-        )
-
-        # Add entry_points.txt (if console_script is enabled)
-        if console_script:
-            entry_points_content = generate_entry_points(name, pkg_name)
-            entry_points_data = entry_points_content.encode("utf-8")
-            entry_points_arcname = f"{dist_info}/entry_points.txt"
-            _write_to_zip(whl, entry_points_arcname, entry_points_data)
-            records.append(
-                FileRecord(
-                    path=entry_points_arcname,
-                    sha256_digest=compute_file_hash(entry_points_data),
-                    size=len(entry_points_data),
-                )
-            )
-
         # Add RECORD (must be last)
         record_content = generate_record(records, dist_info)
         record_data = record_content.encode("utf-8")
@@ -239,31 +202,3 @@ def _write_to_zip(
     info.external_attr = (stat.S_IFREG | perms) << 16
 
     zf.writestr(info, data)
-
-
-# ----------------------------------------------------------------------------------------
-def _generate_init_py(pkg_name: str, binary_filename: str) -> str:
-    """
-    Generate an __init__.py that provides a main() function to launch the binary.
-    The main() function is used as the console_scripts entry point.
-
-    Parameters:
-        pkg_name:        The normalised package name.
-        binary_filename: The binary filename inside the bin/ directory.
-
-    Returns:
-        The __init__.py content as a string.
-    """
-    return f'''"""Wrapper to launch the {binary_filename} binary."""
-
-import os
-import subprocess
-import sys
-
-
-def main() -> None:
-    """Launch the bundled binary, passing through all arguments and exit code."""
-    binary = os.path.join(os.path.dirname(__file__), "bin", "{binary_filename}")
-    result = subprocess.run([binary, *sys.argv[1:]])
-    raise SystemExit(result.returncode)
-'''

@@ -3,4 +3,5 @@ site_name: bin2whl
 
 nav:
   - Home: index.md
+  - changelog.md
   - license.md

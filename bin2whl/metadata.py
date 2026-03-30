@@ -110,40 +110,6 @@ def generate_wheel_metadata(platform: str) -> str:
 
 
 # ----------------------------------------------------------------------------------------
-def generate_entry_points(command_name: str, package_name: str) -> str:
-    """
-    Generate the entry_points.txt content for a console script.
-
-    Parameters:
-        command_name: The command that users will type (e.g. your-go-tool).
-        package_name: The normalised package name (e.g. your_go_tool).
-
-    Returns:
-        The entry_points.txt content as a string.
-    """
-    lines = [
-        "[console_scripts]",
-        f"{command_name} = {package_name}:main",
-        "",
-    ]
-    return "\n".join(lines)
-
-
-# ----------------------------------------------------------------------------------------
-def generate_top_level(package_name: str) -> str:
-    """
-    Generate the top_level.txt content.
-
-    Parameters:
-        package_name: The normalised package name.
-
-    Returns:
-        The top_level.txt content as a string.
-    """
-    return package_name + "\n"
-
-
-# ----------------------------------------------------------------------------------------
 def compute_file_hash(data: bytes) -> str:
     """
     Compute the SHA256 hash of file data in the format used by RECORD files.
