@@ -67,12 +67,16 @@ EXAMPLE_CONFIG = """\
     "homepage": "https://github.com/yourname/your-tool",
     "binaries": {
         "linux_x86_64": "dist/your-tool-linux-x86_64",
-        "linux_aarch64": "dist/your-tool-linux-aarch64",
-        "macosx_10_9_x86_64": "dist/your-tool-macos-x86_64",
-        "macosx_11_0_arm64": "dist/your-tool-macos-arm64",
-        "win_amd64": "dist/your-tool-win-x86_64.exe",
-        "win_arm64": "dist/your-tool-win-arm64.exe"
+        "linux_arm64": "dist/your-tool-linux-arm64",
+        "macos_x86_64": "dist/your-tool-macos-x86_64",
+        "macos_arm64": "dist/your-tool-macos-arm64",
+        "windows_amd64": "dist/your-tool-win-x86_64.exe",
+        "windows_arm64": "dist/your-tool-win-arm64.exe"
     },
+    "classifiers": [
+        "Environment :: Console",
+        "License :: OSI Approved :: MIT License"
+    ],
     "output-dir": "wheels",
     "python-requires": ">=3.7"
 }"""
@@ -131,19 +135,21 @@ def parse_args(argv: list[str]) -> Namespace:
         help="list supported platform tags and exit",
     )
 
+    common_group = p.add_argument_group("common options")
+    common_group.add_argument(
+        "--version-str",
+        "-v",
+        default=None,
+        dest="pkg_version",
+        help="package version (required for single binary mode, overrides config)",
+    )
+
     config_group = p.add_argument_group("config file mode")
     config_group.add_argument(
         "--config",
         "-c",
         default=None,
         help="path to config file (e.g. wheel.json)",
-    )
-    config_group.add_argument(
-        "--version-str",
-        "-v",
-        default=None,
-        dest="pkg_version",
-        help="package version (overrides version in config file)",
     )
 
     single_group = p.add_argument_group("single binary mode")
@@ -239,7 +245,9 @@ def _main_inner(argv: list[str]) -> int:
     # Determine mode: single binary or config file
     single_binary_args = [args.name, args.binary, args.platform]
     has_single_args = any(a is not None for a in single_binary_args)
-    all_single_args = all(a is not None for a in single_binary_args) and args.pkg_version is not None
+    all_single_args = (
+        all(a is not None for a in single_binary_args) and args.pkg_version is not None
+    )
 
     if has_single_args and not all_single_args:
         print(

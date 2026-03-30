@@ -17,12 +17,16 @@ You can also generate this from the CLI with `bin2whl --example-config`.
     "homepage": "https://github.com/yourname/your-tool",
     "binaries": {
         "linux_x86_64": "dist/your-tool-linux-x86_64",
-        "linux_aarch64": "dist/your-tool-linux-aarch64",
-        "macosx_10_9_x86_64": "dist/your-tool-macos-x86_64",
-        "macosx_11_0_arm64": "dist/your-tool-macos-arm64",
-        "win_amd64": "dist/your-tool-win-x86_64.exe",
-        "win_arm64": "dist/your-tool-win-arm64.exe"
+        "linux_arm64": "dist/your-tool-linux-arm64",
+        "macos_x86_64": "dist/your-tool-macos-x86_64",
+        "macos_arm64": "dist/your-tool-macos-arm64",
+        "windows_amd64": "dist/your-tool-win-x86_64.exe",
+        "windows_arm64": "dist/your-tool-win-arm64.exe"
     },
+    "classifiers": [
+        "Environment :: Console",
+        "License :: OSI Approved :: MIT License"
+    ],
     "output-dir": "wheels",
     "python-requires": ">=3.7"
 }
@@ -33,22 +37,23 @@ You can also generate this from the CLI with `bin2whl --example-config`.
 | Field          | Required | Description              |
 |----------------|----------|--------------------------|
 | `name`         | Yes      | Package name             |
-| `version`      | Yes      | PEP 440 version string   |
+| `version`      | No       | PEP 440 version string (can be provided via `--version-str` instead) |
 | `description`  | No       | Short description         |
 | `author`       | No       | Author name              |
 | `author-email` | No       | Author email             |
 | `license`      | No       | Licence identifier       |
 | `homepage`     | No       | Project URL              |
+| `classifiers`  | No       | List of PyPI [classifier strings](https://pypi.org/classifiers/) |
 
 ## binaries
 
-Map of platform tags to binary file paths (relative to wheel.json location).
+Map of platform tags (or aliases) to binary file paths, relative to the wheel.json location.
 
 ```json
 {
     "binaries": {
         "linux_x86_64": "dist/tool-linux-x86_64",
-        "macosx_11_0_arm64": "dist/tool-macos-arm64"
+        "macos_arm64": "dist/tool-macos-arm64"
     }
 }
 ```
@@ -60,17 +65,24 @@ Map of platform tags to binary file paths (relative to wheel.json location).
 | `output-dir`     | `wheels`   | Output directory for .whl files    |
 | `python-requires`| `>=3.7`    | Minimum Python version             |
 
-## Supported Platforms
+## Platform Aliases
 
 Run `bin2whl --platforms` to see this list.
 
-| Platform            | Tag                    |
-|---------------------|------------------------|
-| Linux x86_64        | `linux_x86_64`         |
-| Linux ARM64         | `linux_aarch64`        |
-| macOS x86_64        | `macosx_10_9_x86_64`  |
-| macOS ARM64         | `macosx_11_0_arm64`   |
-| Windows x86_64      | `win_amd64`            |
-| Windows ARM64       | `win_arm64`            |
+Short aliases are expanded to standard wheel platform tags automatically:
 
-Any valid wheel platform tag is accepted — the above are the most common.
+| Alias             | Expands to                  |
+|-------------------|-----------------------------|
+| `linux_x86_64`    | `manylinux_2_17_x86_64`    |
+| `linux_amd64`     | `manylinux_2_17_x86_64`    |
+| `linux_aarch64`   | `manylinux_2_17_aarch64`   |
+| `linux_arm64`     | `manylinux_2_17_aarch64`   |
+| `macos_x86_64`    | `macosx_10_9_x86_64`       |
+| `macos_amd64`     | `macosx_10_9_x86_64`       |
+| `macos_arm64`     | `macosx_11_0_arm64`        |
+| `macos_aarch64`   | `macosx_11_0_arm64`        |
+| `windows_amd64`   | `win_amd64`                |
+| `windows_x86_64`  | `win_amd64`                |
+| `windows_arm64`   | `win_arm64`                |
+
+Any valid wheel platform tag is also accepted directly (e.g. `macosx_14_0_arm64`).

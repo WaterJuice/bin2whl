@@ -135,14 +135,17 @@ def load_config(config_path: Path) -> WheelConfig:
     output_dir = _optional_str(raw, "output-dir", DEFAULT_OUTPUT_DIR)
     python_requires = _optional_str(raw, "python-requires", DEFAULT_PYTHON_REQUIRES)
 
-    classifiers_raw = raw.get("classifiers", [])
+    classifiers_raw = raw.get("classifiers")
     classifiers: list[str] = []
-    if isinstance(classifiers_raw, list):
-        for i, c in enumerate(classifiers_raw):
-            if isinstance(c, str):
-                classifiers.append(c)
-            else:
-                errors.append(f"classifiers[{i}] must be a string")
+    if classifiers_raw is not None:
+        if not isinstance(classifiers_raw, list):
+            errors.append('"classifiers" must be an array')
+        else:
+            for i, c in enumerate(cast("list[object]", classifiers_raw)):
+                if isinstance(c, str):
+                    classifiers.append(c)
+                else:
+                    errors.append(f"classifiers[{i}] must be a string")
 
     if errors:
         raise ValueError(

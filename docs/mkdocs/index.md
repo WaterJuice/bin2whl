@@ -34,10 +34,10 @@ bin2whl --config wheel.json
 
 ```bash
 bin2whl \
-  --name your-go-tool \
-  --version-str 0.1.0 \
-  --binary dist/your-go-tool-linux-x86_64 \
-  --platform linux_x86_64
+  -n your-go-tool \
+  -v 0.1.0 \
+  -b dist/your-go-tool-linux-x86_64 \
+  -p linux_x86_64
 ```
 
 ## Workflow Example

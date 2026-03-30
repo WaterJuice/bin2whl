@@ -4,7 +4,7 @@ This file provides guidance for AI agents working on this project.
 
 ## Project Overview
 
-**bin2whl** is a CLI tool that takes pre-compiled binaries (Go, Zig, C, Rust, etc.) and packages them as proper Python wheels (.whl files) for distribution on PyPI. Each binary produces one platform-specific wheel. Supports macOS, Linux, and Windows on both x86_64 and ARM64 architectures.
+**bin2whl** is a CLI tool that takes pre-compiled binaries (Go, Zig, C, Rust, etc.) and packages them as proper Python wheels (.whl files) for distribution on PyPI. Each binary produces one platform-specific wheel. Supports macOS, Linux, and Windows on both x86_64 and ARM64 architectures. The binary lands directly in the venv's bin/ via .data/scripts/ — no Python wrapper.
 
 ## Language and Spelling
 
@@ -56,17 +56,21 @@ bin2whl/
 │   ├── cli.py            # CLI definition and dispatch
 │   ├── argbuilder.py     # Argument parser wrapper
 │   ├── config.py         # JSON config file parser
-│   ├── wheel_builder.py  # Core wheel building logic
+│   ├── wheel_builder.py  # Core wheel building logic (platform aliases, .data/scripts/)
 │   └── metadata.py       # Wheel metadata generation (METADATA, WHEEL, RECORD)
 ├── docs/                 # Documentation source
 │   ├── mkdocs.yml        # MkDocs config
 │   ├── docinfo.json      # Project metadata for docs
 │   └── mkdocs/           # Documentation content
-│       ├── index.md      # Main documentation page
+│       ├── index.md      # Home page
+│       ├── config.md     # Configuration reference
+│       ├── cli.md        # CLI reference
+│       ├── changelog.md  # Release notes (includes CHANGELOG.md)
 │       └── license.md    # Licence page
 ├── Makefile              # Build automation
 ├── pyproject.toml        # Project metadata and tool config
 ├── README.md             # Project readme
+├── CHANGELOG.md          # Version history
 ├── LICENSE               # Unlicense
 └── CLAUDE.md             # This file
 ```

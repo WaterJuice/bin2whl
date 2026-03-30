@@ -1,6 +1,6 @@
-# bin2whl 1.0.0 Beta 1 — 30 Mar 2026
+# bin2whl 1.0.0 Beta 2 — 30 Mar 2026
 
-First stable release.
+Second beta release.
 
 Build Python wheels from pre-compiled binaries.
 
@@ -10,6 +10,11 @@ Build Python wheels from pre-compiled binaries.
 - Binary placed directly into venv's bin/ via .data/scripts/ — no Python wrapper
 - Config file mode (`--config wheel.json`) for multi-platform builds
 - Single binary mode via CLI arguments
+- Platform aliases for cleaner config (e.g. `linux_arm64` instead of `manylinux_2_17_aarch64`)
+- `--version-str` works with both modes (overrides config version)
+- Optional PyPI classifiers support
+- `--example-config` and `--platforms` for discoverability
+- Short flags for all options (`-n`, `-v`, `-b`, `-p`, `-c`, `-o`, `-d`, `-a`, `-e`)
 - Supports macOS, Linux, and Windows on x86_64 and ARM64
 - Proper PEP 427 wheel metadata and SHA256 hashes
 - Works with `pip install` and `uv tool install`
