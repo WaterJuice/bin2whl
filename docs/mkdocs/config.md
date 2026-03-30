@@ -23,6 +23,7 @@ You can also generate this from the CLI with `bin2whl --example-config`.
         "windows_amd64": "dist/your-tool-win-x86_64.exe",
         "windows_arm64": "dist/your-tool-win-arm64.exe"
     },
+    "readme": "README.md",
     "classifiers": [
         "Environment :: Console",
         "License :: OSI Approved :: MIT License"
@@ -44,6 +45,7 @@ You can also generate this from the CLI with `bin2whl --example-config`.
 | `license`      | No       | Licence identifier       |
 | `homepage`     | No       | Project URL              |
 | `classifiers`  | No       | List of PyPI [classifier strings](https://pypi.org/classifiers/) |
+| `readme`       | No       | Path to a markdown file for PyPI long description |
 
 ## binaries
 

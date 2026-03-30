@@ -73,6 +73,7 @@ EXAMPLE_CONFIG = """\
         "windows_amd64": "dist/your-tool-win-x86_64.exe",
         "windows_arm64": "dist/your-tool-win-arm64.exe"
     },
+    "readme": "README.md",
     "classifiers": [
         "Environment :: Console",
         "License :: OSI Approved :: MIT License"

@@ -1,6 +1,6 @@
-# bin2whl 1.0.0 Beta 2 — 30 Mar 2026
+# bin2whl 1.0.0 Beta 3 — 30 Mar 2026
 
-Second beta release.
+Third beta release.
 
 Build Python wheels from pre-compiled binaries.
 
@@ -13,6 +13,7 @@ Build Python wheels from pre-compiled binaries.
 - Platform aliases for cleaner config (e.g. `linux_arm64` instead of `manylinux_2_17_aarch64`)
 - `--version-str` works with both modes (overrides config version)
 - Optional PyPI classifiers support
+- Optional `readme` field for PyPI long description
 - `--example-config` and `--platforms` for discoverability
 - Short flags for all options (`-n`, `-v`, `-b`, `-p`, `-c`, `-o`, `-d`, `-a`, `-e`)
 - Supports macOS, Linux, and Windows on x86_64 and ARM64
