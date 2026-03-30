@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.pyright/
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# Build output
+/output
+/html
+/site
+
+# Generated
+bin2whl/_version.py
+_generated_command_line_help.txt
+docs/_include/
+
+# macOS
+.DS_Store
+
+# Scripts
+/publish.sh

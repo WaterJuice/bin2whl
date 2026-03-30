@@ -1,0 +1,4 @@
+{
+    "name": "bin2whl",
+    "description": "Build Python wheels from pre-compiled binaries"
+}

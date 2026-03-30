@@ -1,0 +1,6 @@
+INHERIT: !ENV THEME_STD
+site_name: bin2whl
+
+nav:
+  - Home: index.md
+  - license.md
