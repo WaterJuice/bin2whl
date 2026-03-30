@@ -35,9 +35,39 @@ from bin2whl.metadata import generate_wheel_metadata
 _EXECUTABLE_PERMS = 0o755
 _REGULAR_PERMS = 0o644
 
+# Short aliases for common platform tags
+PLATFORM_ALIASES: dict[str, str] = {
+    "linux_x86_64": "manylinux_2_17_x86_64",
+    "linux_amd64": "manylinux_2_17_x86_64",
+    "linux_aarch64": "manylinux_2_17_aarch64",
+    "linux_arm64": "manylinux_2_17_aarch64",
+    "macos_x86_64": "macosx_10_9_x86_64",
+    "macos_amd64": "macosx_10_9_x86_64",
+    "macos_arm64": "macosx_11_0_arm64",
+    "macos_aarch64": "macosx_11_0_arm64",
+    "windows_amd64": "win_amd64",
+    "windows_x86_64": "win_amd64",
+    "windows_arm64": "win_arm64",
+}
+
 # ----------------------------------------------------------------------------------------
 #   Functions
 # ----------------------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------------------
+def resolve_platform(tag: str) -> str:
+    """
+    Resolve a platform tag, expanding aliases to their canonical form.
+    Unknown tags are passed through as-is (any valid wheel tag is accepted).
+
+    Parameters:
+        tag: Platform tag or alias.
+
+    Returns:
+        The canonical platform tag.
+    """
+    return PLATFORM_ALIASES.get(tag, tag)
 
 
 # ----------------------------------------------------------------------------------------
@@ -97,6 +127,7 @@ def build_wheel(
         FileNotFoundError: If the binary does not exist.
         IsADirectoryError: If the binary path is a directory.
     """
+    platform = resolve_platform(platform)
     pkg_name = normalise_name(name)
     dist_info = f"{pkg_name}-{version}.dist-info"
     data_dir = f"{pkg_name}-{version}.data"

@@ -78,17 +78,21 @@ EXAMPLE_CONFIG = """\
 }"""
 
 PLATFORMS_TEXT = """\
-Supported platform tags:
+Platform aliases (short names that expand to standard wheel tags):
 
-  Linux x86_64      linux_x86_64
-  Linux ARM64       linux_aarch64
-  macOS x86_64      macosx_10_9_x86_64
-  macOS ARM64       macosx_11_0_arm64
-  Windows x86_64    win_amd64
-  Windows ARM64     win_arm64
+  linux_x86_64      → manylinux_2_17_x86_64
+  linux_amd64       → manylinux_2_17_x86_64
+  linux_aarch64     → manylinux_2_17_aarch64
+  linux_arm64       → manylinux_2_17_aarch64
+  macos_x86_64      → macosx_10_9_x86_64
+  macos_amd64       → macosx_10_9_x86_64
+  macos_arm64       → macosx_11_0_arm64
+  macos_aarch64     → macosx_11_0_arm64
+  windows_amd64     → win_amd64
+  windows_x86_64    → win_amd64
+  windows_arm64     → win_arm64
 
-Any valid wheel platform tag is accepted — the above are the most common.
-Use the exact tag string as the --platform value or as keys in wheel.json."""
+Any valid wheel platform tag is also accepted directly (e.g. macosx_14_0_arm64)."""
 
 # ----------------------------------------------------------------------------------------
 #   Functions
