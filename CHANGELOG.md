@@ -1,12 +1,13 @@
-# bin2whl 1.0.0 Beta 3 — 30 Mar 2026
+# bin2whl 1.0.0 Beta 4 — 8 Apr 2026
 
-Third beta release.
+Fourth beta release.
 
 Build Python wheels from pre-compiled binaries.
 
 ## Features
 
 - Build platform-specific wheels from any pre-compiled binary (Go, Zig, C, Rust, etc.)
+- **Multi-binary support** — include multiple binaries per wheel (e.g. server + client)
 - Binary placed directly into venv's bin/ via .data/scripts/ — no Python wrapper
 - Config file mode (`--config wheel.json`) for multi-platform builds
 - Single binary mode via CLI arguments

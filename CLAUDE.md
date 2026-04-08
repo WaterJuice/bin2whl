@@ -4,7 +4,7 @@ This file provides guidance for AI agents working on this project.
 
 ## Project Overview
 
-**bin2whl** is a CLI tool that takes pre-compiled binaries (Go, Zig, C, Rust, etc.) and packages them as proper Python wheels (.whl files) for distribution on PyPI. Each binary produces one platform-specific wheel. Supports macOS, Linux, and Windows on both x86_64 and ARM64 architectures. The binary lands directly in the venv's bin/ via .data/scripts/ — no Python wrapper.
+**bin2whl** is a CLI tool that takes pre-compiled binaries (Go, Zig, C, Rust, etc.) and packages them as proper Python wheels (.whl files) for distribution on PyPI. One wheel per platform, with support for multiple binaries per wheel (e.g. server + client). Supports macOS, Linux, and Windows on both x86_64 and ARM64 architectures. Binaries land directly in the venv's bin/ via .data/scripts/ — no Python wrapper.
 
 ## Language and Spelling
 

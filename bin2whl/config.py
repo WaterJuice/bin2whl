@@ -10,6 +10,7 @@
 #   Version History
 #   ---------------
 #   Mar 2026 - Created
+#   Apr 2026 - Added multi-binary support per platform
 # ----------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------
@@ -38,11 +39,19 @@ _PEP440_VERSION_RE = re.compile(r"^\d+(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d
 
 
 @dataclass
+class BinaryEntry:
+    """A single binary with its command name and file path."""
+
+    name: str
+    path: Path
+
+
+@dataclass
 class BinaryMapping:
-    """A mapping from a platform tag to a binary file path."""
+    """A mapping from a platform tag to one or more binary entries."""
 
     platform: str
-    binary_path: Path
+    entries: list[BinaryEntry]
 
 
 @dataclass
@@ -117,17 +126,56 @@ def load_config(config_path: Path) -> WheelConfig:
     binaries_table = cast("dict[str, object]", binaries_raw)
 
     binaries: list[BinaryMapping] = []
-    for platform_tag, binary_path_value in binaries_table.items():
-        if not isinstance(binary_path_value, str):
-            errors.append(f"Binary path for '{platform_tag}' must be a string")
-            continue
-
-        binary_path = base_dir / binary_path_value
-        if not binary_path.exists():
-            errors.append(f"Binary not found: {binary_path} (platform: {platform_tag})")
-            continue
-
-        binaries.append(BinaryMapping(platform=platform_tag, binary_path=binary_path))
+    for platform_tag, binary_value in binaries_table.items():
+        if isinstance(binary_value, str):
+            # Single binary — command name matches the package name
+            binary_path = base_dir / binary_value
+            if not binary_path.exists():
+                errors.append(
+                    f"Binary not found: {binary_path} (platform: {platform_tag})"
+                )
+                continue
+            binaries.append(
+                BinaryMapping(
+                    platform=platform_tag,
+                    entries=[BinaryEntry(name=name, path=binary_path)],
+                )
+            )
+        elif isinstance(binary_value, list):
+            # Multiple binaries — each has an explicit name and path
+            entries: list[BinaryEntry] = []
+            for i, item in enumerate(cast("list[object]", binary_value)):
+                if not isinstance(item, dict):
+                    errors.append(
+                        f"binaries[{platform_tag}][{i}] must be an object "
+                        f'with "name" and "path"'
+                    )
+                    continue
+                item_dict = cast("dict[str, object]", item)
+                entry_name = item_dict.get("name")
+                entry_path_str = item_dict.get("path")
+                if not isinstance(entry_name, str) or not isinstance(
+                    entry_path_str, str
+                ):
+                    errors.append(
+                        f"binaries[{platform_tag}][{i}] requires string "
+                        f'"name" and "path" fields'
+                    )
+                    continue
+                entry_path = base_dir / entry_path_str
+                if not entry_path.exists():
+                    errors.append(
+                        f"Binary not found: {entry_path} "
+                        f"(platform: {platform_tag}, name: {entry_name})"
+                    )
+                    continue
+                entries.append(BinaryEntry(name=entry_name, path=entry_path))
+            if entries:
+                binaries.append(BinaryMapping(platform=platform_tag, entries=entries))
+        else:
+            errors.append(
+                f"binaries[{platform_tag}] must be a string or a list of objects"
+            )
 
     if not binaries and not errors:
         errors.append('No binaries specified in "binaries"')

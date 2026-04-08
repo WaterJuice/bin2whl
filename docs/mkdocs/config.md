@@ -49,7 +49,12 @@ You can also generate this from the CLI with `bin2whl --example-config`.
 
 ## binaries
 
-Map of platform tags (or aliases) to binary file paths, relative to the wheel.json location.
+Map of platform tags (or aliases) to binaries. Each value can be either:
+
+- A **string** — path to a single binary (command name matches the package name)
+- A **list of objects** — multiple binaries with explicit command names
+
+### Single binary per platform
 
 ```json
 {
@@ -59,6 +64,27 @@ Map of platform tags (or aliases) to binary file paths, relative to the wheel.js
     }
 }
 ```
+
+### Multiple binaries per platform
+
+Each entry needs a `name` (the command name when installed) and a `path` (relative to the config file):
+
+```json
+{
+    "binaries": {
+        "linux_x86_64": [
+            {"name": "my-server", "path": "dist/server-linux-x86_64"},
+            {"name": "my-client", "path": "dist/client-linux-x86_64"}
+        ],
+        "macos_arm64": [
+            {"name": "my-server", "path": "dist/server-darwin-arm64"},
+            {"name": "my-client", "path": "dist/client-darwin-arm64"}
+        ]
+    }
+}
+```
+
+All binaries for a platform are included in a single wheel. When installed, each binary becomes a separate command in the venv's bin/ directory.
 
 ## Options
 

@@ -7,10 +7,11 @@ for distribution on PyPI. One wheel per binary, per platform.
 ## Features
 
 - Zero dependencies (pure Python, standard library only)
+- **Multi-binary support** — include multiple binaries per wheel (e.g. server + client)
 - Config file support (`--config wheel.json`) for repeatable builds
 - Single binary mode for one-off builds
 - Platform aliases for cleaner config (e.g. `linux_arm64` instead of `manylinux_2_17_aarch64`)
-- Binary lands directly in venv's bin/ — no Python wrapper
+- Binaries land directly in venv's bin/ — no Python wrapper
 - Supports macOS, Linux, and Windows on x86_64 and ARM64
 - Proper wheel metadata and SHA256 hashes (PEP 427)
 - Optional PyPI classifiers
@@ -30,7 +31,7 @@ pip install bin2whl
 
 ### Config file mode
 
-Create a `wheel.json`:
+Create a `wheel.json`. For a single binary per platform:
 
 ```json
 {
@@ -38,14 +39,30 @@ Create a `wheel.json`:
     "version": "0.1.0",
     "description": "A Go CLI tool packaged for PyPI",
     "author": "Your Name",
-    "author-email": "you@example.com",
     "binaries": {
         "linux_x86_64": "dist/tool-linux-x86_64",
         "linux_arm64": "dist/tool-linux-arm64",
-        "macos_x86_64": "dist/tool-macos-x86_64",
         "macos_arm64": "dist/tool-macos-arm64",
-        "windows_amd64": "dist/tool-win-x86_64.exe",
-        "windows_arm64": "dist/tool-win-arm64.exe"
+        "windows_amd64": "dist/tool-win-x86_64.exe"
+    }
+}
+```
+
+For multiple binaries per platform (e.g. server + client):
+
+```json
+{
+    "name": "your-suite",
+    "version": "0.1.0",
+    "binaries": {
+        "linux_x86_64": [
+            {"name": "your-server", "path": "dist/server-linux-x86_64"},
+            {"name": "your-client", "path": "dist/client-linux-x86_64"}
+        ],
+        "macos_arm64": [
+            {"name": "your-server", "path": "dist/server-darwin-arm64"},
+            {"name": "your-client", "path": "dist/client-darwin-arm64"}
+        ]
     }
 }
 ```

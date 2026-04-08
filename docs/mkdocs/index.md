@@ -7,7 +7,7 @@ for distribution on PyPI.
 ## Features
 
 - Zero dependencies (pure Python, standard library only)
-- Builds one wheel per binary, per platform
+- Builds one wheel per platform, with support for multiple binaries per wheel
 - Config file support (wheel.json) for repeatable builds
 - Supports macOS, Linux, and Windows on x86_64 and ARM64
 - Proper wheel metadata and SHA256 hashes (PEP 427)

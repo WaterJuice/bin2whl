@@ -12,6 +12,7 @@
 #   Version History
 #   ---------------
 #   Mar 2026 - Created
+#   Apr 2026 - Added multi-binary support per wheel
 # ----------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@
 import re
 import stat
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from bin2whl.metadata import FileRecord
 from bin2whl.metadata import compute_file_hash
@@ -34,6 +36,15 @@ from bin2whl.metadata import generate_wheel_metadata
 
 _EXECUTABLE_PERMS = 0o755
 _REGULAR_PERMS = 0o644
+
+
+@dataclass
+class BinarySpec:
+    """A binary to include in a wheel, with its command name and file path."""
+
+    name: str
+    path: Path
+
 
 # Short aliases for common platform tags
 PLATFORM_ALIASES: dict[str, str] = {
@@ -87,11 +98,11 @@ def normalise_name(name: str) -> str:
 
 # ----------------------------------------------------------------------------------------
 def build_wheel(
-    binary_path: Path,
-    name: str,
-    version: str,
-    platform: str,
-    output_dir: Path,
+    binary_path: Path | None = None,
+    name: str = "",
+    version: str = "",
+    platform: str = "",
+    output_dir: Path = Path("wheels"),
     description: str = "",
     author: str = "",
     author_email: str = "",
@@ -100,16 +111,20 @@ def build_wheel(
     python_requires: str = ">=3.7",
     classifiers: list[str] | None = None,
     readme_content: str = "",
+    binaries: list[BinarySpec] | None = None,
 ) -> Path:
     """
-    Build a single wheel file from a pre-compiled binary.
+    Build a single wheel file containing one or more pre-compiled binaries.
 
-    The binary is placed into the .data/scripts/ directory so that pip installs
-    it directly into the venv's bin/ (or Scripts/ on Windows) with no Python
+    Each binary is placed into the .data/scripts/ directory so that pip installs
+    them directly into the venv's bin/ (or Scripts/ on Windows) with no Python
     wrapper script.
 
+    Use either ``binary_path`` (single binary, command name matches package name)
+    or ``binaries`` (multiple binaries with explicit command names).
+
     Parameters:
-        binary_path:     Path to the pre-compiled binary.
+        binary_path:     Path to a single pre-compiled binary (legacy mode).
         name:            Package name (e.g. your-go-tool).
         version:         Package version (e.g. 1.0.0).
         platform:        Platform tag (e.g. linux_x86_64).
@@ -120,22 +135,30 @@ def build_wheel(
         license_name:    Licence identifier.
         homepage:        Project homepage URL.
         python_requires: Minimum Python version specifier.
+        classifiers:     PyPI classifier strings.
+        readme_content:  Long description content.
+        binaries:        List of BinarySpec entries (multi-binary mode).
 
     Returns:
         Path to the created .whl file.
 
     Raises:
-        FileNotFoundError: If the binary does not exist.
-        IsADirectoryError: If the binary path is a directory.
+        FileNotFoundError: If a binary does not exist.
+        IsADirectoryError: If a binary path is a directory.
+        ValueError: If neither binary_path nor binaries is provided.
     """
+    # Build the list of (command_name, file_path) pairs
+    if binaries is not None:
+        specs = binaries
+    elif binary_path is not None:
+        specs = [BinarySpec(name=name, path=binary_path)]
+    else:
+        raise ValueError("Either binary_path or binaries must be provided")
+
     platform = resolve_platform(platform)
     pkg_name = normalise_name(name)
     dist_info = f"{pkg_name}-{version}.dist-info"
     data_dir = f"{pkg_name}-{version}.data"
-
-    binary_filename = name
-    if platform.startswith("win"):
-        binary_filename = name + ".exe"
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -145,15 +168,19 @@ def build_wheel(
     records: list[FileRecord] = []
 
     with zipfile.ZipFile(wheel_path, "w", compression=zipfile.ZIP_DEFLATED) as whl:
-        # Binary into .data/scripts/ — pip copies this directly to bin/
-        binary_data = binary_path.read_bytes()
-        _add_file(
-            whl,
-            f"{data_dir}/scripts/{binary_filename}",
-            binary_data,
-            records,
-            executable=True,
-        )
+        # Binaries into .data/scripts/ — pip copies these directly to bin/
+        for spec in specs:
+            binary_filename = spec.name
+            if platform.startswith("win"):
+                binary_filename = spec.name + ".exe"
+            binary_data = spec.path.read_bytes()
+            _add_file(
+                whl,
+                f"{data_dir}/scripts/{binary_filename}",
+                binary_data,
+                records,
+                executable=True,
+            )
 
         metadata_content = generate_metadata(
             name=name,

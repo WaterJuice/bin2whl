@@ -10,6 +10,7 @@
 #   Version History
 #   ---------------
 #   Mar 2026 - Created
+#   Apr 2026 - Added multi-binary support
 # ----------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------
@@ -22,6 +23,7 @@ from pathlib import Path
 from bin2whl.config import DEFAULT_OUTPUT_DIR
 from bin2whl.config import load_config
 from bin2whl.version import VERSION_STR
+from bin2whl.wheel_builder import BinarySpec
 from bin2whl.wheel_builder import build_wheel
 from .argbuilder import ArgsParser
 from .argbuilder import Namespace
@@ -57,29 +59,37 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <https://unlicense.org>"""
 
 EXAMPLE_CONFIG = """\
+Single binary per platform:
+
 {
     "name": "your-tool",
     "version": "0.1.0",
     "description": "A CLI tool packaged for PyPI",
     "author": "Your Name",
-    "author-email": "you@example.com",
     "license": "MIT",
-    "homepage": "https://github.com/yourname/your-tool",
     "binaries": {
         "linux_x86_64": "dist/your-tool-linux-x86_64",
         "linux_arm64": "dist/your-tool-linux-arm64",
-        "macos_x86_64": "dist/your-tool-macos-x86_64",
         "macos_arm64": "dist/your-tool-macos-arm64",
-        "windows_amd64": "dist/your-tool-win-x86_64.exe",
-        "windows_arm64": "dist/your-tool-win-arm64.exe"
-    },
-    "readme": "README.md",
-    "classifiers": [
-        "Environment :: Console",
-        "License :: OSI Approved :: MIT License"
-    ],
-    "output-dir": "wheels",
-    "python-requires": ">=3.7"
+        "windows_amd64": "dist/your-tool-win-x86_64.exe"
+    }
+}
+
+Multiple binaries per platform:
+
+{
+    "name": "your-suite",
+    "version": "0.1.0",
+    "binaries": {
+        "linux_x86_64": [
+            {"name": "your-server", "path": "dist/server-linux-x86_64"},
+            {"name": "your-client", "path": "dist/client-linux-x86_64"}
+        ],
+        "macos_arm64": [
+            {"name": "your-server", "path": "dist/server-darwin-arm64"},
+            {"name": "your-client", "path": "dist/client-darwin-arm64"}
+        ]
+    }
 }"""
 
 PLATFORMS_TEXT = """\
@@ -332,8 +342,8 @@ def _build_from_config(args: Namespace) -> int:
     built_count = 0
 
     for binary_mapping in config.binaries:
+        specs = [BinarySpec(name=e.name, path=e.path) for e in binary_mapping.entries]
         wheel_path = build_wheel(
-            binary_path=binary_mapping.binary_path,
             name=config.name,
             version=version,
             platform=binary_mapping.platform,
@@ -346,6 +356,7 @@ def _build_from_config(args: Namespace) -> int:
             python_requires=config.python_requires,
             classifiers=config.classifiers,
             readme_content=config.readme_content,
+            binaries=specs,
         )
         print(f"Built: {wheel_path}")
         built_count += 1
