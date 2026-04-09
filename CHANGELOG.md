@@ -1,6 +1,6 @@
-# bin2whl 1.0.0 Beta 4 — 8 Apr 2026
+# bin2whl 1.0.0 - 9 Apr 2026
 
-Fourth beta release.
+Initial release.
 
 Build Python wheels from pre-compiled binaries.
 
