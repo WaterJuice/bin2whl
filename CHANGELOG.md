@@ -1,3 +1,7 @@
+# bin2whl 1.0.1 - 30 May 2026
+
+Moved to new GitHub location: https://github.com/WaterJuice/bin2whl
+
 # bin2whl 1.0.0 - 9 Apr 2026
 
 Initial release.

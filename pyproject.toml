@@ -11,7 +11,7 @@ authors = [
 ]
 keywords = ["python", "wheel", "binary", "packaging", "cli", "pypi"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
@@ -21,7 +21,8 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/WaterJuice/bin2whl"
+Documentation = "https://docs.waterjuice.org/bin2whl/latest/"
+Source = "https://github.com/WaterJuice/bin2whl"
 
 [project.scripts]
 bin2whl = "bin2whl.cli:main"
@@ -44,7 +45,7 @@ artifacts = ["bin2whl/_version.py"]
 [tool.hatch.build.targets.wheel]
 packages = ["bin2whl"]
 
-[tool.cal-publish-python]
+[tool.wj-publish]
 profile = "waterjuice"
 
 [tool.uv]
@@ -69,6 +70,6 @@ pythonVersion = "3.12"
 dev = [
     "ruff",
     "pyright[nodejs]",
-    "cal-mkdocs",
-    "cal-publish-python>=0.4.0",
+    "wj-mkdocs",
+    "wj-publish",
 ]
